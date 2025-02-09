@@ -1,4 +1,4 @@
-name: "[gazelle] check"
+name: "gazelle"
 
 on:
   push:

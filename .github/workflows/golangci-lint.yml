@@ -16,12 +16,11 @@ jobs:
     name: golangci-lint
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code Repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           show-progress: false
-          token: ${{ secrets.GITHUB_TOKEN }}
-          persist-credentials: true
+          # We, unfortunately, need the full repository history here so that golangci-lint
+          # can tell us only what's been introduced in the latest commit. This probably can be optimized.
           fetch-depth: 0
       
       - uses: bazel-contrib/setup-bazel@0.13.0
@@ -33,12 +32,10 @@ jobs:
           # Share repository cache between workflows.
           repository-cache: true
 
-      - name: Setup Bazel
-        run: |
+      - run: |
           cat <<EOF > ~/.bazelrc
           build --remote_header=x-buildbuddy-api-key=${{ secrets.BUILDBUDDY_API_KEY }}
           build --build_metadata=ROLE=CI
           EOF
 
-      - name: Lint
-        run: make lint
+      - run: make lint
