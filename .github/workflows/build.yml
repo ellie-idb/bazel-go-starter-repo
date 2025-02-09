@@ -33,7 +33,6 @@ jobs:
       - name: Setup Bazel
         run: |
           cat <<EOF > ~/.bazelrc
-          build --config=ci
           build --remote_header=x-buildbuddy-api-key=${{ secrets.BUILDBUDDY_API_KEY }}
           build --build_metadata=ROLE=CI
           EOF
