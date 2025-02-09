@@ -1,0 +1,1 @@
+# bazel-go-starter-repo
