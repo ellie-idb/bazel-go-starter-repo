@@ -1,0 +1,41 @@
+bazel_dep(name = "aspect_bazel_lib", version = "2.7.2")
+bazel_dep(name = "platforms", version = "0.0.10")
+bazel_dep(name = "bazel_features", version = "1.21.0")
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
+bazel_dep(name = "rules_pkg", version = "1.0.1")
+bazel_dep(name = "rules_oci", version = "2.2.0")
+git_override(
+    module_name = "rules_oci",
+    commit = "34e03e20c6c657ef3ce5bd554ba31f43957a9b24",
+    remote = "https://github.com/devzero-inc/rules_oci",
+)
+
+bazel_dep(name = "rules_go", version = "0.51.0-rc1")
+git_override(
+    module_name = "rules_go",
+    commit = "b5bd718a9b82a3ca22108b2fe1f00b031615ee3f",
+    remote = "https://github.com/devzero-inc/rules_go",
+)
+
+bazel_dep(name = "gazelle", version = "0.37.0", repo_name = "bazel_gazelle")
+
+go_sdk = use_extension("@rules_go//go:extensions.bzl", "go_sdk")
+go_sdk.download(version = "1.23.5")
+go_sdk.nogo(
+    includes = [
+        "@//:__subpackages__",
+    ],
+    nogo = "//:nogo",
+)
+
+go_deps = use_extension("@bazel_gazelle//:extensions.bzl", "go_deps")
+go_deps.from_file(go_mod = "//:go.mod")
+
+# Adding a new dep? Don't do it manually - run `bazel mod tidy` :-)
+use_repo(
+    go_deps,
+    "cc_mvdan_gofumpt",
+    "com_github_golangci_golangci_lint",
+    "org_golang_x_tools",
+    "org_golang_x_tools_gopls",
+)

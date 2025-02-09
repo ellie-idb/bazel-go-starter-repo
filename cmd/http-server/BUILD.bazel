@@ -1,0 +1,107 @@
+load("@aspect_bazel_lib//lib:expand_template.bzl", "expand_template")
+load("@rules_go//go:def.bzl", "go_binary", "go_library")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_load", "oci_push")
+load("@rules_pkg//pkg:mappings.bzl", "pkg_attributes", "pkg_filegroup", "pkg_files")
+load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
+
+go_library(
+    name = "http-server_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/ellie-idb/bazel-go-starter-repo/cmd/http-server",
+    visibility = ["//visibility:public"],
+)
+
+go_binary(
+    name = "http-server",
+    embed = [":http-server_lib"],
+    visibility = ["//visibility:public"],
+)
+
+pkg_files(
+    name = "server_bin",
+    srcs = [
+        ":http-server",
+    ],
+    attributes = pkg_attributes("0755", "root", "root", 0, 0),
+)
+
+pkg_filegroup(
+    name = "bins",
+    srcs = [
+        ":server_bin",
+    ],
+    prefix = "usr/local/bin",
+    # strip_prefix = strip_prefix.from_pkg(),
+)
+
+pkg_tar(
+    name = "container",
+    srcs = [
+        ":bins",
+    ],
+)
+
+oci_image(
+    name = "image_linux_amd64",
+    architecture = "amd64",
+    created = ":created",
+    entrypoint = ["/usr/local/bin/http-server"],
+    os = "linux",
+    tars = [":container"],
+    visibility = ["//visibility:public"],
+)
+
+oci_image(
+    name = "image_linux_arm64",
+    architecture = "arm64",
+    created = ":created",
+    entrypoint = ["/usr/local/bin/http-server"],
+    os = "linux",
+    tars = [":container"],
+    visibility = ["//visibility:public"],
+)
+
+expand_template(
+    name = "created",
+    out = "created.txt",
+    stamp_substitutions = {"2000-01-01T01:02:03+0000": "{{IMAGE_TIMESTAMP}}"},
+    template = ["2000-01-01T01:02:03+0000"],
+)
+
+expand_template(
+    name = "image.tags",
+    out = "_tags.txt",
+    stamp_substitutions = select({
+        "@rules_go//go/platform:amd64": {
+            "latest": "latest-amd64",
+        },
+        "@rules_go//go/platform:arm64": {
+            "latest": "latest-arm64",
+        },
+    }),
+    template = [
+        "latest",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+oci_load(
+    name = "image.load",
+    image = select({
+        "@rules_go//go/platform:amd64": ":image_linux_amd64",
+        "@rules_go//go/platform:arm64": ":image_linux_arm64",
+    }),
+    repo_tags = ["http-server:latest"],
+    visibility = ["//visibility:public"],
+)
+
+oci_push(
+    name = "image.push",
+    image = select({
+        "@rules_go//go/platform:amd64": ":image_linux_amd64",
+        "@rules_go//go/platform:arm64": ":image_linux_arm64",
+    }),
+    remote_tags = ":image.tags",
+    repository = "ghcr.io/ellie-idb/http-server",
+    visibility = ["//visibility:public"],
+)

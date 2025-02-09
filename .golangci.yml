@@ -1,0 +1,34 @@
+output:
+  # Make output more digestible with quickfix in vim/emacs/etc.
+  sort-results: true
+  print-issued-lines: false
+
+linters:
+  # We're mainly interested in just linting, rather than static analysis.
+  # Static analysis is done through Bazel, via nogo.
+  disable-all: true
+  enable:
+    - gofumpt
+    - nolintlint # lints nolint directives
+    - revive
+
+linters-settings:
+  # disable errors about unknown lint directives. 
+  nolintlint:
+    allow-unused: true
+
+issues:
+  # Print all issues reported by all linters.
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  # Don't ignore some of the issues that golangci-lint considers okay.
+  # This includes documenting all exported entities.
+  exclude-use-default: false
+
+  exclude-rules:
+    # Generally ignore if fmt.Fprint* can't write to stdout (or stderr) --
+    # we don't care all too much about that.
+    - linters: [errcheck]
+      text: "Error return value of `fmt.Fprintf` is not checked"
+    - linters: [errcheck]
+      text: "Error return value of `fmt.Fprintln` is not checked"

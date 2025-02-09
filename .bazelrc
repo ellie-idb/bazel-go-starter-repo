@@ -1,0 +1,32 @@
+# Force CGO_DISABLED=0 and static linking for everything.
+build --@rules_go//go/config:static
+build --@rules_go//go/config:pure
+
+common --enable_bzlmod
+common --lockfile_mode=update
+# Don't inherit the host's PATH variables. This helps with caching -- especially once you start throwing Protobuf into the mix.
+common --incompatible_strict_action_env
+
+build --enable_platform_specific_config
+build --norun_validations
+build:linux --workspace_status_command=$(pwd)/workspace_status.sh
+build:macos --workspace_status_command=$(pwd)/workspace_status.sh
+build --stamp
+build --remote_cache_compression
+build --experimental_profile_include_primary_output
+build --experimental_profile_include_target_label
+build --noslim_profile 
+build --nolegacy_important_outputs
+# See https://github.com/protocolbuffers/protobuf/issues/16944
+build:macos --host_cxxopt=-std=c++14 --cxxopt=-std=c++14
+
+# This is a read-only API key, which is fine to have in here. We want people to be able to take advantage of
+# remote caching, without having to sign up for BuildBuddy, or without pushing their own artifacts to BuildBuddy,
+# and potentially poisoning the cache.
+build --remote_header=x-buildbuddy-api-key=7AXjjv77Oq4UfB6ds1iC
+build --remote_cache=grpcs://remote.buildbuddy.io
+build --remote_timeout=3600
+
+build:linux-arm64 --platforms=@rules_go//go/toolchain:linux_arm64
+# Keep this at the very bottom, so that users can override this bazelrc.
+try-import %workspace%/.bazelrc.user

@@ -1,0 +1,9 @@
+# Bazel ignores
+bazel-bin
+bazel-out
+bazel-bazel-go-starter-repo
+bazel-testlogs
+.bazelrc.user
+.gpd
+
+MODULE.bazel.lock
